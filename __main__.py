@@ -4,7 +4,7 @@ import argparse
 from .create import CreateMods, CreateDownloads
 from .conflict import Conflict
 from .tree import Tree
-from .dev_build import DevBuild
+from .devbuild import DevBuild
 from .context import Context, Dump
 
 MO_BASE_DIR = os.path.join(os.getenv("LOCALAPPDATA"), "ModOrganizer")
@@ -13,7 +13,7 @@ DEFAULT_INSTANCE_DIR = os.path.join(MO_BASE_DIR, DEFAULT_INSTANCE)
 
 def main_parser():
     p = argparse.ArgumentParser(
-        description="==> IMPORTANT: all mod commands below might empty the " +
+        description="==> IMPORTANT: all commands below might empty the " +
                     "mods or downloads directories of the given instance " +
                     "(defaults to " + DEFAULT_INSTANCE_DIR + ")")
 
@@ -22,24 +22,39 @@ def main_parser():
         help="simulates all filesystem operations")
 
     p.add_argument(
-        "--instance",
-        type=str,
-        default=DEFAULT_INSTANCE,
-        help="name of the instance to use, defaults to '" +
-             "" + DEFAULT_INSTANCE + "'")
-
-    p.add_argument(
         "--base-dir",
         type=str,
         default=MO_BASE_DIR,
         help="base data directory, defaults to " + MO_BASE_DIR)
 
     p.add_argument(
+        "--output-dir",
+        type=str,
+        default=os.getcwd(),
+        help="base output dir (contains build, install, etc.), defaults to " +
+             "$pwd (currently '" + os.getcwd() + "')")
+
+    p.add_argument(
         "--install-dir",
         type=str,
-        default=os.path.join(os.getcwd(), "install"),
-        help="install directory, defaults to $pwd/install (currently " +
-             "" + os.path.join(os.getcwd(), "install") + ")")
+        default=None,
+        help="install directory, defaults to " +
+             "" + os.path.join("$outputdir", "install"))
+
+    p.add_argument(
+        "--src-dir",
+        type=str,
+        default=None,
+        help="src directory for the modorganizer project (contains main.cpp, " +
+             "mainwindow.cpp, etc.), defaults to " +
+             os.path.join("$outputdir", Context.SRC_PATH))
+
+    p.add_argument(
+        "--instance",
+        type=str,
+        default=DEFAULT_INSTANCE,
+        help="name of the instance to use, should be a directory in " +
+             "$basedir, defaults to '" + DEFAULT_INSTANCE + "'")
 
     p.add_argument(
         "--no-ini",

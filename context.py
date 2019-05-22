@@ -3,11 +3,16 @@ import configparser
 from .operations import DryOperations, RealOperations
 
 class Context:
+    SRC_PATH = os.path.join("build", "modorganizer_super", "modorganizer", "src")
+
     def __init__(self, opts):
         self.ops_ = None
         self.options = opts
         self.mods_ = None
         self.dl_ = None
+
+        if self.options.install_dir is None:
+            self.options.install_dir = os.path.join(self.options.output_dir, "install")
 
         if self.options.dry:
             print("this is a dry run")
@@ -45,16 +50,28 @@ class Context:
         return os.path.join(self.options.base_dir, self.options.instance)
 
     def mods_directory(self):
-        if self.mods_ is None:
-            return os.path.join(self.instance_directory(), "mods")
-        else:
+        if self.mods_ is not None:
             return self.mods_
 
+        return os.path.join(self.instance_directory(), "mods")
+
     def downloads_directory(self):
-        if self.dl_ is None:
-            return os.path.join(self.instance_directory(), "downloads")
-        else:
+        if self.dl_ is not None:
             return self.dl_
+
+        return os.path.join(self.instance_directory(), "downloads")
+
+    def install_directory(self):
+        if self.options.install_dir is not None:
+            return self.options.install_dir
+
+        return os.path.join(self.options.output_dir, "install")
+
+    def src_directory(self):
+        if self.options.src_dir is not None:
+            return self.options.src_dir
+
+        return os.path.join(self.options.output_dir, Context.SRC_PATH)
 
     def clear_directory(self, path):
         path = os.path.normpath(path)
@@ -91,12 +108,14 @@ class Context:
         print("  . ini:       " + self.dump_ini())
         print("  . mods:      " + self.dump_mods())
         print("  . downloads: " + self.dump_downloads())
+        print("  . install:   " + self.dump_install())
+        print("  . src:       " + self.dump_src())
 
     def dump_instance(self):
-        return self.dump_path(None, self.instance_directory())
+        return self.dump_path(False, self.instance_directory())
 
     def dump_ini(self):
-        return self.dump_path(None, self.settings_ini())
+        return self.dump_path(False, self.settings_ini())
 
     def dump_mods(self):
         return self.dump_path(self.mods_ is not None, self.mods_directory())
@@ -104,26 +123,36 @@ class Context:
     def dump_downloads(self):
         return self.dump_path(self.dl_ is not None, self.downloads_directory())
 
-    def dump_path(self, from_ini, p):
+    def dump_install(self):
+        p = self.install_directory()
+        ok = os.path.exists(os.path.join(p, "bin", "ModOrganizer.exe"))
+        return self.dump_path_string(ok, False, p)
+
+    def dump_src(self):
+        p = self.src_directory()
+        ok = os.path.exists(os.path.join(p, "main.cpp"))
+        return self.dump_path_string(ok, False, p)
+
+    def dump_path(self, ini, p):
+        return self.dump_path_string(os.path.exists(p), ini, p)
+
+    def dump_path_string(self, ok, ini, p):
         s = ""
 
-        if os.path.exists(p):
+        if ok:
             s = "[OK] "
         else:
             s = "[BAD]"
 
         s += " "
 
-        if from_ini is None:
-            s += "        "
-        elif from_ini:
-            s += "[INI]   "
+        if ini:
+            s += "[INI] "
         else:
-            s += "[NO INI]"
+            s += "      "
 
-        s += " " + p
+        return p + " " + s
 
-        return s
 
 class Dump:
     def name(self):
