@@ -20,6 +20,11 @@ class CreateMods:
                  "filenames")
 
         p.add_argument(
+            "--esm",
+            action="store_true",
+            help="adds a .esm in every mod")
+
+        p.add_argument(
             "count",
             type=int,
             help="number of mods to create")
@@ -35,16 +40,20 @@ class CreateMods:
         cx.clear_directory(cx.mods_directory())
 
         for i in range(cx.options.count):
-            m = Mod("mod-" + str(i + 1))
+            name = "mod-" + str(i + 1)
+            m = Mod(name)
 
             for i in range(cx.options.files):
-                filename = str(i + 1)
+                filename = str(i + 1) + ".txt"
                 content = m.name() + " " + filename
 
                 m.add_file(File(filename, content))
 
                 if cx.options.duplicate_hidden:
                     m.add_file(File(filename + ".mohidden", content))
+
+            if cx.options.esm:
+                m.add_file(File(name + ".esm", ""))
 
             m.create(cx)
 

@@ -29,20 +29,20 @@ class Conflict:
 
         a = Mod("mod-1")
         for i in range(count):
-            filename = str(i + 1)
+            filename = str(i + 1) + ".txt"
             content = a.name() + " " + filename
             a.add_file(File(filename, content))
 
         b = Mod("mod-2")
         for i in range(count * 3):
-            filename = str(i + 1)
-            content = a.name() + " " + filename
+            filename = str(i + 1) + ".txt"
+            content = b.name() + " " + filename
             b.add_file(File(filename, content))
 
         c = Mod("mod-3")
         for i in range(count):
-            filename = str(count*2 + (i + 1))
-            content = a.name() + " " + filename
+            filename = str(count*2 + (i + 1)) + ".txt"
+            content = c.name() + " " + filename
             c.add_file(File(filename, content))
 
         a.create(cx)
