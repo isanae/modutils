@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-from .create import CreateMods, CreateDownloads
+from .create import CreateMods, CreateDownloads, Overwrite
 from .conflict import Conflict
 from .tree import Tree
 from .devbuild import DevBuild
@@ -79,6 +79,7 @@ def main():
     commands = [
         CreateMods(),
         CreateDownloads(),
+        Overwrite(),
         Conflict(),
         Tree(),
         DevBuild(),

@@ -50,6 +50,15 @@ class File:
     def content(self):
         return self.content_
 
+    def create(self, cx, dir):
+        path = os.path.join(dir, self.name_)
+
+        # file name may have directory separators, don't use dir for parent
+        parent = os.path.dirname(path)
+
+        cx.create_directory(parent)
+        cx.write_file(path, self.content_)
+
 
 class Mod:
     def __init__(self, name):
@@ -81,11 +90,7 @@ class Mod:
 
     def create_files(self, cx, dir):
         for f in itertools.chain(self.internal_files_, self.files_):
-            path = os.path.join(dir, f.name())
-            parent = os.path.dirname(path)
-
-            cx.create_directory(parent)
-            cx.write_file(path, f.content())
+            f.create(cx, dir)
 
 
 class Download:

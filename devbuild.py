@@ -93,8 +93,8 @@ class DevBuild:
         p = sp.add_parser(
             self.name(),
             help="creates dev builds",
-            description="creates two 7z archives in the current directory " +
-                        "from install/bin/* and install/pdbs/*")
+            description="creates an archive in the current directory " +
+                        "from install/bin/*")
 
         p.add_argument(
             "--no-bin",
@@ -102,9 +102,9 @@ class DevBuild:
             help="skips the creation of the binaries archive")
 
         p.add_argument(
-            "--no-pdbs",
+            "--pdbs",
             action="store_true",
-            help="skips the creation of the pdbs archive")
+            help="creates a second archive from install/pdbs/*")
 
         p.add_argument(
             "--output-dir",
@@ -142,7 +142,7 @@ class DevBuild:
 
             cx.archive(src, dest)
 
-        if not cx.options.no_pdbs:
+        if cx.options.pdbs:
             src = os.path.join(install_dir, "pdb", "*")
             dest = os.path.join(output_dir, self.make_filename(cx, "-pdbs"))
 

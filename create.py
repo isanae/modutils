@@ -131,3 +131,21 @@ class CreateDownloads:
             s += str(random.randint(1, 10))
 
         return s
+
+
+class Overwrite:
+    def name(self):
+        return "overwrite"
+
+    def create_parser(self, sp):
+        p = sp.add_parser(
+            self.name(),
+            help="creates files in the overwrite directory",
+            description="creates files in the overwrite directory")
+
+        return p
+
+    def run(self, cx):
+        cx.clear_directory(cx.overwrite_directory())
+        File("a.txt", "a").create(cx, cx.overwrite_directory())
+        File("b.txt", "b").create(cx, cx.overwrite_directory())

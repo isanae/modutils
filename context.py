@@ -10,6 +10,7 @@ class Context:
         self.options = opts
         self.mods_ = None
         self.dl_ = None
+        self.overwrite_ = None
 
         if self.options.install_dir is None:
             self.options.install_dir = os.path.join(self.options.output_dir, "install")
@@ -37,11 +38,15 @@ class Context:
         cp = configparser.ConfigParser()
         cp.read_file(open(self.settings_ini()))
 
-        if "download_directory" in cp["Settings"]:
-            self.dl_ = os.path.normpath(cp["Settings"]["download_directory"])
+        self.dl_ = self.read_path(cp, "download_directory")
+        self.mods_ = self.read_path(cp, "mod_directory")
+        self.overwrite_ = self.read_path(cp, "overwrite_directory")
 
-        if "mod_directory" in cp["Settings"]:
-            self.mods_ = os.path.normpath(cp["Settings"]["mod_directory"])
+    def read_path(self, cp, which):
+        if which in cp["Settings"]:
+            return os.path.normpath(cp["Settings"][which])
+        else:
+            return None
 
     def settings_ini(self):
         return os.path.join(self.instance_directory(), "ModOrganizer.ini")
@@ -60,6 +65,12 @@ class Context:
             return self.dl_
 
         return os.path.join(self.instance_directory(), "downloads")
+
+    def overwrite_directory(self):
+        if self.overwrite_ is not None:
+            return self.overwrite_
+
+        return os.path.join(self.instance_directory(), "overwrite")
 
     def install_directory(self):
         if self.options.install_dir is not None:
@@ -100,16 +111,22 @@ class Context:
 
     def dump(self):
         print("options:")
-        for k, v in vars(self.options).items():
-            print(" . " + k + "=" + str(v))
 
-        print("paths:")
-        print("  . instance:  " + self.dump_instance())
-        print("  . ini:       " + self.dump_ini())
-        print("  . mods:      " + self.dump_mods())
-        print("  . downloads: " + self.dump_downloads())
-        print("  . install:   " + self.dump_install())
-        print("  . src:       " + self.dump_src())
+        longest = 0
+        for k, v in vars(self.options).items():
+            longest = max(longest, len(k))
+
+        for k, v in vars(self.options).items():
+            print((" . {:<" + str(longest) + "} = {}").format(k, str(v)))
+
+        print("\npaths:")
+        print("  . instance  = " + self.dump_instance())
+        print("  . ini       = " + self.dump_ini())
+        print("  . mods      = " + self.dump_mods())
+        print("  . downloads = " + self.dump_downloads())
+        print("  . overwrite = " + self.dump_overwrite())
+        print("  . install   = " + self.dump_install())
+        print("  . src       = " + self.dump_src())
 
     def dump_instance(self):
         return self.dump_path(False, self.instance_directory())
@@ -122,6 +139,9 @@ class Context:
 
     def dump_downloads(self):
         return self.dump_path(self.dl_ is not None, self.downloads_directory())
+
+    def dump_overwrite(self):
+        return self.dump_path(self.overwrite_ is not None, self.overwrite_directory())
 
     def dump_install(self):
         p = self.install_directory()
