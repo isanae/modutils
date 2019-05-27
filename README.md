@@ -42,6 +42,13 @@ optional arguments:
   --ext EXT   specifies extension (defaults to '7z')
 ```
 
+### overwrite ###
+```
+usage: modutils overwrite [-h]
+
+creates files in the overwrite directory
+```
+
 ### conflict ###
 ```
 usage: modutils conflict [-h] file_count
@@ -65,12 +72,13 @@ creates one mod with a varied file tree
 
 ### devbuild ###
 ```
-usage: modutils devbuild [-h] [--no-bin] [--no-pdbs]
-                            [--output-dir OUTPUT_DIR] [--version VERSION]
-                            build [name]
+usage: modutils devbuild [-h] [--no-bin] [--no-src] [--pdbs]
+                         [--output-dir OUTPUT_DIR] [--version VERSION]
+                         [--force]
+                         build [name]
 
-creates two 7z archives in the current directory from install/bin/* and
-install/pdbs/*
+creates two archives in the current directory: one from install/bin/* and
+another with the sources of projects in modorganizer_super
 
 positional arguments:
   build                 build number
@@ -79,10 +87,14 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --no-bin              skips the creation of the binaries archive
-  --no-pdbs             skips the creation of the pdbs archive
+  --no-src              skips the creation of the sources archive
+  --pdbs                creates another archive from install/pdbs/*
   --output-dir OUTPUT_DIR
                         sets the output directory instead of the current
                         directory
-  --version VERSION     sets the version instead of getting it from the
-                        executable or version.rc
-                        ```
+  --version VERSION     sets the version instead of getting it from
+                        modorganizer.exe or version.rc
+  --force               ignore file size warnings which could indicate bad
+                        paths or unexpected files being pulled into the
+                        archives
+```
