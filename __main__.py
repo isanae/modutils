@@ -93,10 +93,10 @@ def main():
         return 1
 
     set_log_level(LogLevels.NONE)
-    if opts.log == 1: set_log_level(LogLevels.ERROR)
-    if opts.log == 2: set_log_level(LogLevels.WARN)
-    if opts.log == 3: set_log_level(LogLevels.INFO)
-    if opts.log == 4: set_log_level(LogLevels.OPERATIONS)
+    if opts.log >= 1: add_log_level(LogLevels.ERROR)
+    if opts.log >= 2: add_log_level(LogLevels.WARN)
+    if opts.log >= 3: add_log_level(LogLevels.INFO)
+    if opts.log >= 4: add_log_level(LogLevels.OPERATIONS)
 
     if opts.dry:
         add_log_level(LogLevels.OPERATIONS)

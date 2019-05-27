@@ -3,6 +3,7 @@ import subprocess
 import abc
 import time
 import shutil
+import tempfile
 from .log import *
 
 SEVENZ = r"C:\Program Files\7-Zip\7z.exe"
@@ -20,14 +21,33 @@ class OperationsImpl(metaclass=abc.ABCMeta):
     def write_file(self, path, content):
         pass
 
-    def archive(self, input, output):
-        self.run_process([SEVENZ, "a", output, "-r", "-mx=5", input])
-
-    def archive_string(self, path, content):
-        return self.popen([SEVENZ, "a", "d.zip", "-si" + path, "-so"], content)
+    @abc.abstractmethod
+    def delete_file(self, path):
+        pass
 
     @abc.abstractmethod
-    def run_process(self, input, output):
+    def temp_file(self):
+        pass
+
+    def archive(self, input, output):
+        if os.path.exists(output):
+            raise Exception("file {} already exists".format(output))
+
+        self.run_process([SEVENZ, "a", output, "-r", "-mx=5", input], None)
+
+    def archive_string(self, path, content):
+        # filename doesn't matter because the archive is dumped in stdout, but
+        # the extension dictates the compression type
+        return self.popen([SEVENZ, "a", "d.zip", "-si" + path, "-so"], content)
+
+    def archive_listfile(self, listfile, output, cwd):
+        if os.path.exists(output):
+            raise Exception("file {} already exists".format(output))
+
+        self.run_process([SEVENZ, "a", output, "@" + listfile], cwd)
+
+    @abc.abstractmethod
+    def run_process(self, input, output, cwd):
         pass
 
     @abc.abstractmethod
@@ -51,12 +71,20 @@ class DryOperations(OperationsImpl):
     def write_file(self, path, content):
         pass
 
-    def run_process(self, args):
-        log_op("would run: {}", " ".join(args))
+    def delete_file(self, path):
         pass
 
+    def temp_file(self):
+        return "tempfile"
+
+    def run_process(self, args, cwd):
+        if cwd is None:
+            log_op("would run: \"{}\"", " ".join(args))
+        else:
+            log_op("would run: \"{}\" with cwd={}", " ".join(args), cwd)
+
     def popen(self, args, send):
-        log_op("would run: {}", " ".join(args))
+        log_op("would run: \"{}\"", " ".join(args))
         return ""
 
 
@@ -83,8 +111,16 @@ class RealOperations(OperationsImpl):
         with open(path, mode) as f:
             f.write(content)
 
-    def run_process(self, args):
-        subprocess.run(args)
+    def delete_file(self, path):
+        os.remove(path)
+
+    def temp_file(self):
+        f = tempfile.mkstemp()
+        os.close(f[0])
+        return f[1]
+
+    def run_process(self, args, cwd):
+        subprocess.run(args, cwd=cwd)
 
     def popen(self, args, send):
         p = subprocess.Popen(

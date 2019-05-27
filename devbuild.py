@@ -1,6 +1,7 @@
 import os
 import re
 from ctypes import *
+from pathlib import Path
 from .log import *
 
 # returns the requested version information from the given file
@@ -86,6 +87,61 @@ def get_version_from_rc(rc):
     return None
 
 
+def byte_size_string(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+class FileGatherer:
+    def __init__(self, root):
+        self.root_ = root
+        self.ignore_ = []
+        self.files_ = []
+        self.total_ = 0
+
+    def ignore(self, list):
+        self.ignore_ = [re.compile(s) for s in list]
+
+    def get(self):
+        self.files_ = []
+        self.total_ = 0
+
+        self.add_dir(self.root_)
+
+        return {"total_size": self.total_, "files": self.files_}
+
+    def add_dir(self, dir):
+        for entry in Path(dir).iterdir():
+            if self.is_ignored(entry):
+                continue
+
+            if entry.is_dir():
+                self.add_dir(entry)
+            else:
+                size = entry.stat().st_size
+                path = str(entry)
+
+                if not path.startswith(self.root_):
+                    print("path doesn't start with root dir '{}'?", this.root_)
+                    raise Exception()
+
+                path = path[len(self.root_):]
+                while path[0] == '/' or path[0] == '\\':
+                    path = path[1:]
+
+                self.files_.append((path, size))
+                self.total_ += size
+
+    def is_ignored(self, f):
+        for e in self.ignore_:
+            if e.match(f.name):
+                return True
+
+        return False
+
 class DevBuild:
     def name(self):
         return "devbuild"
@@ -94,8 +150,9 @@ class DevBuild:
         p = sp.add_parser(
             self.name(),
             help="creates dev builds",
-            description="creates an archive in the current directory " +
-                        "from install/bin/*")
+            description="creates two archives in the current directory: " +
+                        "one install/bin/* and another with the sources of "
+                        "projects in modorganizer_super")
 
         p.add_argument(
             "--no-bin",
@@ -103,15 +160,14 @@ class DevBuild:
             help="skips the creation of the binaries archive")
 
         p.add_argument(
-            "--pdb",
+            "--no-src",
             action="store_true",
-            help="creates a second archive from install/pdbs/*")
+            help="skips the creation of the sources archive")
 
         p.add_argument(
-            "--src",
+            "--pdbs",
             action="store_true",
-            help="creates a tarball with the sources of all projects in "
-                 "modorganizer_super")
+            help="creates a second archive from install/pdbs/*")
 
         p.add_argument(
             "--output-dir",
@@ -124,6 +180,12 @@ class DevBuild:
             type=str,
             default=None,
             help="sets the version instead of getting it from version.rc")
+
+        p.add_argument(
+            "--force",
+            action="store_true",
+            help="ignore file size warnings which could indicate bad paths or "
+                 "unexpected files being pulled into the archives")
 
         p.add_argument(
             "build",
@@ -143,10 +205,10 @@ class DevBuild:
         if not cx.options.no_bin:
             self.make_bin(cx)
 
-        if cx.options.pdb:
-            self.make_pdb(cx)
+        if cx.options.pdbs:
+            self.make_pdbs(cx)
 
-        if cx.options.src:
+        if not cx.options.no_src:
             self.make_src(cx)
 
         return 0
@@ -158,46 +220,113 @@ class DevBuild:
         destination = cx.options.destination
 
         src = os.path.join(install_dir, "bin", "*")
-        dest = os.path.join(destination, self.make_filename(cx))
+        dest = os.path.join(destination, self.bin_filename(cx))
         cx.archive(src, dest)
 
-    def make_pdb(self, cx):
+    def make_pdbs(self, cx):
         info("making pdb archive")
 
         install_dir = cx.install_directory()
         destination = cx.options.destination
 
         src = os.path.join(install_dir, "pdb", "*")
-        dest = os.path.join(destination, self.make_filename(cx, "-pdbs"))
+        dest = os.path.join(destination, self.pdb_filename(cx))
         cx.archive(src, dest)
 
     def make_src(self, cx):
-        info("making source tarball")
+        info("making source archive")
 
         root_dir = cx.super_directory()
         destination = cx.options.destination
 
+        ignore = [
+            r"\..+",     # dot files
+            r".*\.log",  # logs
+            r".*\.tlog", # logs
+            r".*\.dll",  # dll
+            r".*\.exe",  # exe
+            r".*\.lib",  # lib
+            r".*\.obj",  # obj
+            r".*\.ts",   # ts
+            r".*\.aps",  # aps
+            r"vsbuild"   # vsbuild
+        ]
 
+        fg = FileGatherer(root_dir)
+        fg.ignore(ignore)
+        r = fg.get()
 
+        # should be below 20MB
+        max_expected_size = 20 * 1024 * 1024
 
-    def make_filename(self, cx, more=""):
+        if self.too_large(cx, r, max_expected_size):
+            return
+
+        listfile = cx.temp_file()
+        with open(listfile, "w") as out:
+            for f in r["files"]:
+                log_op(f[0])
+                out.write(f[0] + "\n")
+
+        dest = os.path.join(destination, self.src_filename(cx))
+        cx.archive_listfile(listfile, dest, root_dir)
+
+        cx.delete_file(listfile)
+
+    def too_large(self, cx, r, max):
+        if r["total_size"] <= max:
+            return
+
+        print("total size of source files would be {}, expected something "
+              "below {}, something might be wrong".format(
+                    byte_size_string(r["total_size"]),
+                    byte_size_string(max)))
+
+        if cx.options.force:
+            print("but --force is specified, ignoring")
+            return True
+
+        print("use --force to ignore")
+        print("dumping top 10 largest files:")
+
+        list = sorted(r["files"], key=lambda f: f[1], reverse=True)
+
+        for i in range(len(list)):
+            if i >= 10:
+                break
+
+            print(list[i][0] + " " + byte_size_string(list[i][1]))
+
+        return False
+
+    def bin_filename(self, cx):
+        return self.build_filename(
+            cx.options.name, self.version(cx), cx.options.build)
+
+    def src_filename(self, cx):
+        return self.build_filename(
+            cx.options.name, self.version(cx), cx.options.build, "-src")
+
+    def pdb_filename(self, cx):
+        return self.build_filename(
+            cx.options.name, self.version(cx), cx.options.build, "-pdbs")
+
+    def build_filename(self, name, version, build, more=""):
         prefix = "Mod.Organizer"
         suffix = ".7z"
 
         s = ""
 
         # version
-        v = self.version(cx)
-        if v is not None:
-            s += "-" + v
+        if version is not None:
+            s += "-" + version
 
         # name
-        s += "-" + cx.options.name
+        if name is not None and name != "":
+            s += "-" + name
 
         # build
-        if not s.startswith("build"):
-            s += "build"
-        s += cx.options.build
+        s += "-build" + build
 
         # more
         s += more

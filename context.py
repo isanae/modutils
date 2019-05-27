@@ -4,6 +4,8 @@ from .operations import DryOperations, RealOperations
 from .log import *
 
 class Context:
+    SUPER_PATH = os.path.join("build", "modorganizer_super")
+
     class ValidationFailed(Exception):
         pass
 
@@ -56,14 +58,26 @@ class Context:
         files = ["install", "build"]
         dir = self.options.destination
 
-        for f in files:
-            path = os.path.join(dir, f)
+        try:
+            for f in files:
+                path = os.path.join(dir, f)
 
-            if not os.path.exists(path):
-                print("bad destination directory '{}', {}/ not found"
-                    .format(dir, f))
+                if not os.path.exists(path):
+                    print("bad destination directory '{}', {}/ not found"
+                        .format(dir, f))
+
+                    raise Context.ValidationFailed()
+
+            super = self.super_directory()
+
+            if not os.path.exists(super):
+                print("bad destination directory '{}', {} not found"
+                    .format(dir, Context.SUPER_PATH))
 
                 raise Context.ValidationFailed()
+        except Context.ValidationFailed:
+            print("note that the destination directory defaults to $pwd")
+            raise
 
     def read_ini(self):
         # hack: don't throw for 'dump', let it run and warn the user instead
@@ -117,8 +131,7 @@ class Context:
         return os.path.join(self.options.destination, "install")
 
     def super_directory(self):
-        return os.path.join(
-            self.options.destination, "build", "modorganizer_super")
+        return os.path.join(self.options.destination, Context.SUPER_PATH)
 
     def clear_directory(self, path):
         path = os.path.normpath(path)
@@ -135,6 +148,13 @@ class Context:
         log_op("writing to {}", path)
         self.ops_.write_file(path, content)
 
+    def delete_file(self, path):
+        log_op("deleting {}", path)
+        self.ops_.delete_file(path)
+
+    def temp_file(self):
+        return self.ops_.temp_file()
+
     def archive(self, input, output):
         input = os.path.normpath(input)
         output = os.path.normpath(output)
@@ -144,6 +164,13 @@ class Context:
     def archive_string(self, path, content):
         log_op("archiving data into archive, archived filename is {}", path)
         return self.ops_.archive_string(path, content)
+
+    def archive_listfile(self, listfile, output, cwd=None):
+        if cwd is None:
+            cwd = os.getcwd()
+
+        log_op("archiving @{} into {} with cwd {}", listfile, output, cwd)
+        return self.ops_.archive_listfile(listfile, output, cwd)
 
     def dump(self):
         info("options:")
