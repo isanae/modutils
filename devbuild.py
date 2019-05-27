@@ -258,20 +258,15 @@ class DevBuild:
 
         # should be below 20MB
         max_expected_size = 20 * 1024 * 1024
-
         if self.too_large(cx, r, max_expected_size):
             return
 
-        listfile = cx.temp_file()
-        with open(listfile, "w") as out:
-            for f in r["files"]:
-                log_op(f[0])
-                out.write(f[0] + "\n")
+        files = []
+        for f in r["files"]:
+            files.append(f[0])
 
         dest = os.path.join(destination, self.src_filename(cx))
-        cx.archive_listfile(listfile, dest, root_dir)
-
-        cx.delete_file(listfile)
+        cx.archive_files(files, dest, root_dir)
 
     def too_large(self, cx, r, max):
         if r["total_size"] <= max:

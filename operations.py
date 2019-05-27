@@ -40,7 +40,7 @@ class OperationsImpl(metaclass=abc.ABCMeta):
         # the extension dictates the compression type
         return self.popen([SEVENZ, "a", "d.zip", "-si" + path, "-so"], content)
 
-    def archive_listfile(self, listfile, output, cwd):
+    def archive_files(self, listfile, output, cwd):
         if os.path.exists(output):
             raise Exception("file {} already exists".format(output))
 

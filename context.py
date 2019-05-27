@@ -148,12 +148,14 @@ class Context:
         log_op("writing to {}", path)
         self.ops_.write_file(path, content)
 
+    def temp_file(self):
+        file = self.ops_.temp_file()
+        log_op("generating temp file '{}'", file)
+        return file
+
     def delete_file(self, path):
         log_op("deleting {}", path)
         self.ops_.delete_file(path)
-
-    def temp_file(self):
-        return self.ops_.temp_file()
 
     def archive(self, input, output):
         input = os.path.normpath(input)
@@ -165,12 +167,21 @@ class Context:
         log_op("archiving data into archive, archived filename is {}", path)
         return self.ops_.archive_string(path, content)
 
-    def archive_listfile(self, listfile, output, cwd=None):
+    def archive_files(self, files, out, cwd=None):
         if cwd is None:
             cwd = os.getcwd()
 
-        log_op("archiving @{} into {} with cwd {}", listfile, output, cwd)
-        return self.ops_.archive_listfile(listfile, output, cwd)
+        log_op("archiving {} files into {} with cwd {}", len(files), out, cwd)
+
+        content = ""
+        for f in files:
+            content += f + "\n"
+
+        listfile = self.temp_file()
+
+        self.write_file(listfile, content)
+        self.ops_.archive_files(listfile, out, cwd)
+        self.delete_file(listfile)
 
     def dump(self):
         info("options:")
