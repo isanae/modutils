@@ -151,8 +151,8 @@ class DevBuild:
             self.name(),
             help="creates dev builds",
             description="creates two archives in the current directory: " +
-                        "one install/bin/* and another with the sources of "
-                        "projects in modorganizer_super")
+                        "one from install/bin/* and another with the sources "
+                        "of projects in modorganizer_super")
 
         p.add_argument(
             "--no-bin",
@@ -167,7 +167,7 @@ class DevBuild:
         p.add_argument(
             "--pdbs",
             action="store_true",
-            help="creates a second archive from install/pdbs/*")
+            help="creates another archive from install/pdbs/*")
 
         p.add_argument(
             "--output-dir",
@@ -179,7 +179,8 @@ class DevBuild:
             "--version",
             type=str,
             default=None,
-            help="sets the version instead of getting it from version.rc")
+            help="sets the version instead of getting it from "
+                 "modorganizer.exe or version.rc")
 
         p.add_argument(
             "--force",
