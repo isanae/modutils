@@ -4,12 +4,17 @@ from .operations import DryOperations, RealOperations
 from .log import *
 
 class Context:
+    class ValidationFailed(Exception):
+        pass
+
     def __init__(self, opts):
         self.ops_ = None
         self.options = opts
         self.mods_ = None
         self.dl_ = None
         self.overwrite_ = None
+
+        self.validate()
 
         if self.options.dry:
             info("this is a dry run")
@@ -19,6 +24,46 @@ class Context:
 
         if not self.options.no_ini:
             self.read_ini()
+
+    def validate(self):
+        self.validate_base()
+        self.validate_instance()
+        self.validate_destination()
+
+    def validate_base(self):
+        file = "nxmhandler.ini"
+        dir = self.options.base_dir
+        path = os.path.join(dir, file)
+
+        if not os.path.exists(path):
+            print("bad base directory '{}', {} not found"
+                .format(dir, file))
+
+            raise Context.ValidationFailed()
+
+    def validate_instance(self):
+        path = self.settings_ini()
+        dir = os.path.dirname(path)
+        file = os.path.basename(path)
+
+        if not os.path.exists(path):
+            print("bad instance directory '{}', {} not found"
+                .format(dir, file))
+
+            raise Context.ValidationFailed()
+
+    def validate_destination(self):
+        files = ["install", "build"]
+        dir = self.options.destination
+
+        for f in files:
+            path = os.path.join(dir, f)
+
+            if not os.path.exists(path):
+                print("bad destination directory '{}', {}/ not found"
+                    .format(dir, f))
+
+                raise Context.ValidationFailed()
 
     def read_ini(self):
         # hack: don't throw for 'dump', let it run and warn the user instead
@@ -69,11 +114,11 @@ class Context:
         return os.path.join(self.instance_directory(), "overwrite")
 
     def install_directory(self):
-        return os.path.join(self.options.output_dir, "install")
+        return os.path.join(self.options.destination, "install")
 
     def super_directory(self):
         return os.path.join(
-            self.options.output_dir, "build", "modorganizer_super")
+            self.options.destination, "build", "modorganizer_super")
 
     def clear_directory(self, path):
         path = os.path.normpath(path)

@@ -26,7 +26,7 @@ def main_parser():
     p.add_argument(
         "--log",
         type=int,
-        default=2,
+        default=3,
         help="logs up to the given level: 0=none, 1=error, 2=warn, 3=info, "
              "4=operations, defaults to info")
 
@@ -37,11 +37,11 @@ def main_parser():
         help="base data directory, defaults to " + MO_BASE_DIR)
 
     p.add_argument(
-        "--output-dir",
+        "--destination",
         type=str,
         default=os.getcwd(),
-        help="base output dir (contains build, install, etc.), defaults to " +
-             "$pwd (currently '" + os.getcwd() + "')")
+        help="destination dir given to unimake.py (contains build, install, "
+             "etc.), defaults to $pwd (currently '" + os.getcwd() + "')")
 
     p.add_argument(
         "--instance",
@@ -98,12 +98,15 @@ def main():
     if opts.log == 3: set_log_level(LogLevels.INFO)
     if opts.log == 4: set_log_level(LogLevels.OPERATIONS)
 
-
     if opts.dry:
-        add_log_level(LogLevels.OP)
+        add_log_level(LogLevels.OPERATIONS)
 
-    cx = Context(opts)
-    return sel.run(cx)
+    try:
+        cx = Context(opts)
+        return sel.run(cx)
+    except Context.ValidationFailed:
+        print("validation failed, check your paths")
+        return 1
 
 
 if __name__ == "__main__":

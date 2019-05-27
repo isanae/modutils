@@ -140,25 +140,45 @@ class DevBuild:
         return p
 
     def run(self, cx):
-        install_dir = cx.install_directory()
-        output_dir = cx.options.output_dir
-
         if not cx.options.no_bin:
-            src = os.path.join(install_dir, "bin", "*")
-            dest = os.path.join(output_dir, self.make_filename(cx))
-
-            cx.archive(src, dest)
+            self.make_bin(cx)
 
         if cx.options.pdb:
-            src = os.path.join(install_dir, "pdb", "*")
-            dest = os.path.join(output_dir, self.make_filename(cx, "-pdbs"))
+            self.make_pdb(cx)
 
-            cx.archive(src, dest)
-
-        #if cx.options.src:
-
+        if cx.options.src:
+            self.make_src(cx)
 
         return 0
+
+    def make_bin(self, cx):
+        info("making binary archive")
+
+        install_dir = cx.install_directory()
+        destination = cx.options.destination
+
+        src = os.path.join(install_dir, "bin", "*")
+        dest = os.path.join(destination, self.make_filename(cx))
+        cx.archive(src, dest)
+
+    def make_pdb(self, cx):
+        info("making pdb archive")
+
+        install_dir = cx.install_directory()
+        destination = cx.options.destination
+
+        src = os.path.join(install_dir, "pdb", "*")
+        dest = os.path.join(destination, self.make_filename(cx, "-pdbs"))
+        cx.archive(src, dest)
+
+    def make_src(self, cx):
+        info("making source tarball")
+
+        root_dir = cx.super_directory()
+        destination = cx.options.destination
+
+
+
 
     def make_filename(self, cx, more=""):
         prefix = "Mod.Organizer"
