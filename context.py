@@ -1,10 +1,9 @@
 import os
 import configparser
 from .operations import DryOperations, RealOperations
+from .log import *
 
 class Context:
-    SRC_PATH = os.path.join("build", "modorganizer_super", "modorganizer", "src")
-
     def __init__(self, opts):
         self.ops_ = None
         self.options = opts
@@ -12,11 +11,8 @@ class Context:
         self.dl_ = None
         self.overwrite_ = None
 
-        if self.options.install_dir is None:
-            self.options.install_dir = os.path.join(self.options.output_dir, "install")
-
         if self.options.dry:
-            print("this is a dry run")
+            info("this is a dry run")
             self.ops_ = DryOperations()
         else:
             self.ops_ = RealOperations()
@@ -73,60 +69,52 @@ class Context:
         return os.path.join(self.instance_directory(), "overwrite")
 
     def install_directory(self):
-        if self.options.install_dir is not None:
-            return self.options.install_dir
-
         return os.path.join(self.options.output_dir, "install")
 
-    def src_directory(self):
-        if self.options.src_dir is not None:
-            return self.options.src_dir
-
-        return os.path.join(self.options.output_dir, Context.SRC_PATH)
+    def super_directory(self):
+        return os.path.join(
+            self.options.output_dir, "build", "modorganizer_super")
 
     def clear_directory(self, path):
         path = os.path.normpath(path)
-        print("clearing directory " + path)
+        log_op("clearing directory {}", path)
         self.ops_.clear_directory(path)
 
     def create_directory(self, path):
         path = os.path.normpath(path)
-        print("creating directory " + path)
+        log_op("creating directory {}", path)
         self.ops_.create_directory(path)
 
     def write_file(self, path, content):
         path = os.path.normpath(path)
-        print("writing to " + path)
+        log_op("writing to {}", path)
         self.ops_.write_file(path, content)
 
     def archive(self, input, output):
         input = os.path.normpath(input)
         output = os.path.normpath(output)
-        print("archiving " + input + " into " + output)
+        log_op("archiving {} into {}", input, output)
         self.ops_.archive(input, output)
 
     def archive_string(self, path, content):
-        print("archiving temp data into archive, archived filename is " + path)
+        log_op("archiving data into archive, archived filename is {}", path)
         return self.ops_.archive_string(path, content)
 
     def dump(self):
-        print("options:")
+        info("options:")
+        info(make_table(vars(self.options).items()))
+        info("\npaths:")
+        info(make_table(self.make_paths()))
 
-        longest = 0
-        for k, v in vars(self.options).items():
-            longest = max(longest, len(k))
-
-        for k, v in vars(self.options).items():
-            print((" . {:<" + str(longest) + "} = {}").format(k, str(v)))
-
-        print("\npaths:")
-        print("  . instance  = " + self.dump_instance())
-        print("  . ini       = " + self.dump_ini())
-        print("  . mods      = " + self.dump_mods())
-        print("  . downloads = " + self.dump_downloads())
-        print("  . overwrite = " + self.dump_overwrite())
-        print("  . install   = " + self.dump_install())
-        print("  . src       = " + self.dump_src())
+    def make_paths(self):
+        return [
+            ("instance", self.dump_instance()),
+            ("ini", self.dump_ini()),
+            ("mods", self.dump_mods()),
+            ("downloads", self.dump_downloads()),
+            ("overwrite", self.dump_overwrite()),
+            ("install", self.dump_install()),
+            ("super", self.dump_super())]
 
     def dump_instance(self):
         return self.dump_path(False, self.instance_directory())
@@ -148,9 +136,12 @@ class Context:
         ok = os.path.exists(os.path.join(p, "bin", "ModOrganizer.exe"))
         return self.dump_path_string(ok, False, p)
 
-    def dump_src(self):
-        p = self.src_directory()
-        ok = os.path.exists(os.path.join(p, "main.cpp"))
+    def dump_super(self):
+        p = self.super_directory()
+        ok = (os.path.exists(os.path.join(p, "check_fnis")) and
+              os.path.exists(os.path.join(p, "modorganizer")) and
+              os.path.exists(os.path.join(p, "game_skyrim")))
+
         return self.dump_path_string(ok, False, p)
 
     def dump_path(self, ini, p):

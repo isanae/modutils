@@ -1,6 +1,7 @@
 import os
 import re
 from ctypes import *
+from .log import *
 
 # returns the requested version information from the given file
 #
@@ -102,9 +103,15 @@ class DevBuild:
             help="skips the creation of the binaries archive")
 
         p.add_argument(
-            "--pdbs",
+            "--pdb",
             action="store_true",
             help="creates a second archive from install/pdbs/*")
+
+        p.add_argument(
+            "--src",
+            action="store_true",
+            help="creates a tarball with the sources of all projects in "
+                 "modorganizer_super")
 
         p.add_argument(
             "--output-dir",
@@ -142,11 +149,14 @@ class DevBuild:
 
             cx.archive(src, dest)
 
-        if cx.options.pdbs:
+        if cx.options.pdb:
             src = os.path.join(install_dir, "pdb", "*")
             dest = os.path.join(output_dir, self.make_filename(cx, "-pdbs"))
 
             cx.archive(src, dest)
+
+        #if cx.options.src:
+
 
         return 0
 
@@ -176,12 +186,13 @@ class DevBuild:
 
     def version(self, cx):
         exe = os.path.join(cx.install_directory(), "bin", "ModOrganizer.exe")
-        rc = os.path.join(cx.src_directory(), "version.rc")
+        rc = os.path.join(cx.super_directory(), "modorganizer", "src", "version.rc")
 
         v = None
         try:
-            v = get_version_string(rc, "FileVersion")
-            if v == "":
+            v = get_version_string(ec, "FileVersion")
+            if v == "" or v is None:
+                warn("failed to get FileVersion from '{}'", exe)
                 v = None
         except:
             pass
@@ -190,6 +201,6 @@ class DevBuild:
             v = get_version_from_rc(rc)
 
         if v is None:
-            print("can't get version number")
+            error("can't get version number")
 
         return v

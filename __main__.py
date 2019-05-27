@@ -6,6 +6,7 @@ from .conflict import Conflict
 from .tree import Tree
 from .devbuild import DevBuild
 from .context import Context, Dump
+from .log import *
 
 MO_BASE_DIR = os.path.join(os.getenv("LOCALAPPDATA"), "ModOrganizer")
 DEFAULT_INSTANCE = "mo-test"
@@ -18,8 +19,16 @@ def main_parser():
                     "(defaults to " + DEFAULT_INSTANCE_DIR + ")")
 
     p.add_argument(
-        "--dry", action="store_true",
+        "--dry",
+        action="store_true",
         help="simulates all filesystem operations")
+
+    p.add_argument(
+        "--log",
+        type=int,
+        default=2,
+        help="logs up to the given level: 0=none, 1=error, 2=warn, 3=info, "
+             "4=operations, defaults to info")
 
     p.add_argument(
         "--base-dir",
@@ -33,21 +42,6 @@ def main_parser():
         default=os.getcwd(),
         help="base output dir (contains build, install, etc.), defaults to " +
              "$pwd (currently '" + os.getcwd() + "')")
-
-    p.add_argument(
-        "--install-dir",
-        type=str,
-        default=None,
-        help="install directory, defaults to " +
-             "" + os.path.join("$outputdir", "install"))
-
-    p.add_argument(
-        "--src-dir",
-        type=str,
-        default=None,
-        help="src directory for the modorganizer project (contains main.cpp, " +
-             "mainwindow.cpp, etc.), defaults to " +
-             os.path.join("$outputdir", Context.SRC_PATH))
 
     p.add_argument(
         "--instance",
@@ -97,6 +91,16 @@ def main():
     if sel is None:
         p.print_help()
         return 1
+
+    set_log_level(LogLevels.NONE)
+    if opts.log == 1: set_log_level(LogLevels.ERROR)
+    if opts.log == 2: set_log_level(LogLevels.WARN)
+    if opts.log == 3: set_log_level(LogLevels.INFO)
+    if opts.log == 4: set_log_level(LogLevels.OPERATIONS)
+
+
+    if opts.dry:
+        add_log_level(LogLevels.OP)
 
     cx = Context(opts)
     return sel.run(cx)

@@ -3,6 +3,7 @@ import subprocess
 import abc
 import time
 import shutil
+from .log import *
 
 SEVENZ = r"C:\Program Files\7-Zip\7z.exe"
 
@@ -40,9 +41,9 @@ class DryOperations(OperationsImpl):
             fp = os.path.join(path, f)
 
             if os.path.isfile(fp):
-                print("  . file " + fp)
+                log_op("  . file {}", fp)
             else:
-                print("  . dir   " + fp)
+                log_op("  . dir  {}",fp)
 
     def create_directory(self, path):
         pass
@@ -51,11 +52,11 @@ class DryOperations(OperationsImpl):
         pass
 
     def run_process(self, args):
-        print("would run: " + " ".join(args))
+        log_op("would run: {}", " ".join(args))
         pass
 
     def popen(self, args, send):
-        print("would run: " + " ".join(args))
+        log_op("would run: {}", " ".join(args))
         return ""
 
 
@@ -91,6 +92,6 @@ class RealOperations(OperationsImpl):
 
         out, err = p.communicate(send)
         if err is not None:
-            print(err)
+            error(err)
 
         return out
