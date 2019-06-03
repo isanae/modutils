@@ -346,6 +346,6 @@ class DevBuild:
             v = get_version_from_rc(rc)
 
         if v is None:
-            error("can't get version number")
+            raise Exception("can't get version number")
 
         return v
