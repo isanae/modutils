@@ -32,6 +32,13 @@ class Conflict:
         c.add_file(File("2-3.txt", "mod-3 2-3"))
         c.add_file(File("1-2-3.txt", "mod-3 1-2-3"))
 
+        for i in range(5):
+            a.add_file(File(str(i), str(i)))
+            c.add_file(File(str(i + 10), str(i + 10)))
+
+        for i in range(15):
+            b.add_file(File(str(i), str(i)))
+
         a.create(cx)
         b.create(cx)
         c.create(cx)
