@@ -322,7 +322,9 @@ class DevBuild:
             s += "-" + name
 
         # build
-        s += "-build" + build
+        build_name = "-build" + build
+        if build_name not in version:
+            s += build_name
 
         # more
         s += more
