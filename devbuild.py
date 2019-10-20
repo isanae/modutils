@@ -222,7 +222,7 @@ class DevBuild:
 
         src = os.path.join(install_dir, "bin", "*")
         dest = os.path.join(destination, self.bin_filename(cx))
-        cx.archive(src, dest)
+        cx.archive(src, dest, ["__pycache__"])
 
     def make_pdbs(self, cx):
         info("making pdb archive")
@@ -321,10 +321,10 @@ class DevBuild:
         if name is not None and name != "":
             s += "-" + name
 
-        # build
-        build_name = "-build" + build
-        if build_name not in version:
-            s += build_name
+        # alpha
+        alpha_name = "alpha" + build
+        if alpha_name not in (version+name):
+            s += "-" + alpha_name
 
         # more
         s += more

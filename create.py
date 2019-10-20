@@ -25,13 +25,19 @@ class CreateMods:
             help="adds a .esm in every mod")
 
         p.add_argument(
+            "--huge",
+            action="store_true",
+            help="creates mods with lots of files")
+
+        p.add_argument(
             "count",
             type=int,
             help="number of mods to create")
 
         p.add_argument(
-            "files",
+            "--files",
             type=int,
+            default=5,
             help="number of files to create per mod")
 
         return p
@@ -43,21 +49,76 @@ class CreateMods:
             name = "mod-" + str(i + 1)
             m = Mod(name)
 
-            for i in range(cx.options.files):
-                filename = str(i + 1) + ".txt"
-                content = m.name() + " " + filename
+            if cx.options.huge:
+                self.create_huge(cx, m)
+            else:
+                for i in range(cx.options.files):
+                    self.add_text_file(cx, m, str(i + 1), ".txt")
+                    self.add_text_file(cx, m, str(i + 1), ".ini")
 
-                m.add_file(File(filename, content))
-
-                if cx.options.duplicate_hidden:
-                    m.add_file(File(filename + ".mohidden", content))
-
-            if cx.options.esm:
-                m.add_file(File(name + ".esm", ""))
+                if cx.options.esm:
+                    m.add_file(File(name + ".esm", ""))
 
             m.create(cx)
 
         return 0
+
+    def create_huge(self, cx, m):
+        count = 100000
+        txt_count = count
+        ini_count = count
+        image_count = count
+        esp_count = count
+
+        print("txt")
+        dir = ""
+        for i in range(txt_count):
+            if (i % 50) == 0:
+                dir = "txt_" + str(i)
+
+            self.add_text_file(cx, m, dir + "/" + str(i + 1), ".txt")
+
+        print("ini")
+        dir = ""
+        for i in range(ini_count):
+            if (i % 50) == 0:
+                dir = "ini_" + str(i)
+
+            self.add_text_file(cx, m, dir + "/" + str(i + 1), ".ini")
+
+        print("images")
+        image = ""
+        with open(cx.res_file("image.png"), "rb") as f:
+            image = f.read()
+
+        dir = ""
+        for i in range(image_count):
+            if (i % 50) == 0:
+                dir = "image_" + str(i)
+
+            m.add_file(File(dir + "/" + str(i + 1) + ".png", image))
+
+        print("esp")
+        esp = ""
+        with open(cx.res_file("dummy.esp"), "rb") as f:
+            esp = f.read()
+
+        dir = ""
+        for i in range(esp_count):
+            if (i % 50) == 0:
+                dir = "esp_" + str(i)
+
+            m.add_file(File(dir + "/" + str(i + 1) + ".esp", esp))
+
+
+    def add_text_file(self, cx, m, name, ext):
+        filename = name + ext
+        content = m.name() + " " + filename
+
+        m.add_file(File(filename, content))
+
+        if cx.options.duplicate_hidden:
+            m.add_file(File(filename + ".mohidden", content))
 
 
 class CreateDownloads:

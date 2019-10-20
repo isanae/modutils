@@ -79,6 +79,10 @@ class Context:
             print("note that the destination directory defaults to $pwd")
             raise
 
+    def res_file(self, file):
+        dir = os.path.dirname(__file__)
+        return os.path.join(dir, "res", file)
+
     def read_ini(self):
         # hack: don't throw for 'dump', let it run and warn the user instead
         if self.options.command == "dump":
@@ -157,11 +161,11 @@ class Context:
         log_op("deleting {}", path)
         self.ops_.delete_file(path)
 
-    def archive(self, input, output):
+    def archive(self, input, output, exclude=[]):
         input = os.path.normpath(input)
         output = os.path.normpath(output)
-        log_op("archiving {} into {}", input, output)
-        self.ops_.archive(input, output)
+        log_op("archiving {} into {}, exclude={}", input, output, exclude)
+        self.ops_.archive(input, output, exclude)
 
     def archive_string(self, path, content):
         log_op("archiving data into archive, archived filename is {}", path)

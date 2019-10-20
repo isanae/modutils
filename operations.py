@@ -29,11 +29,15 @@ class OperationsImpl(metaclass=abc.ABCMeta):
     def temp_file(self):
         pass
 
-    def archive(self, input, output):
+    def archive(self, input, output, exclude=[]):
         if os.path.exists(output):
             raise Exception("file {} already exists".format(output))
 
-        self.run_process([SEVENZ, "a", output, "-r", "-mx=5", input], None)
+        args = [SEVENZ, "a", output, "-r", "-mx=5", input]
+        for e in exclude:
+            args.append("-xr!" + e)
+
+        self.run_process(args, None)
 
     def archive_string(self, path, content):
         # filename doesn't matter because the archive is dumped in stdout, but
