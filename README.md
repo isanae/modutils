@@ -10,6 +10,9 @@ By default, modutils will **take over** an instance named "mo-test", which has t
 
 I'm dumping the help of all commands below.
 
+## License ##
+CC0 1.0 Universal. This project is in the public domain.
+
 ### mods ###
 ```
 usage: modutils mods [-h] [--duplicate-hidden] count files
