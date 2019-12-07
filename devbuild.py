@@ -165,9 +165,9 @@ class DevBuild:
             help="skips the creation of the sources archive")
 
         p.add_argument(
-            "--pdbs",
+            "--no-pdbs",
             action="store_true",
-            help="creates another archive from install/pdbs/*")
+            help="skips the creation of the pdbs archive")
 
         p.add_argument(
             "--output-dir",
@@ -206,7 +206,7 @@ class DevBuild:
         if not cx.options.no_bin:
             self.make_bin(cx)
 
-        if cx.options.pdbs:
+        if not cx.options.no_pdbs:
             self.make_pdbs(cx)
 
         if not cx.options.no_src:
