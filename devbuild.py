@@ -321,10 +321,15 @@ class DevBuild:
         if name is not None and name != "":
             s += "-" + name
 
-        # alpha
-        alpha_name = "alpha" + build
-        if alpha_name not in (version+name):
-            s += "-" + alpha_name
+        # alpha or rc
+        build_name = ""
+        if build.isdigit():
+            build_name = "alpha" + build
+        else:
+            build_name = build
+
+        if build_name not in (version+name):
+            s += "-" + build_name
 
         # more
         s += more
